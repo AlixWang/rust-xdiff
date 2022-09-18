@@ -1,0 +1,16 @@
+---
+rust:
+  request1:
+    method: GET
+    url: https://rust-lang.org/
+    headers:
+      user-agent: Aloha
+    params:
+      hello: world
+  request2:
+    method: GET
+    url: https://rust-lang.org/
+    params: {}
+  response:
+    skip_headers:
+      - set-cookie
