@@ -1,4 +1,6 @@
-mod cli;
+use clap::Parser;
+use xdiff::cli::Args;
 fn main() {
-    println!("Hello, world!");
+    let args = Args::parse();
+    println!("Hello, world! {:?}", args);
 }

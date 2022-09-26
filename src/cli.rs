@@ -1,20 +1,22 @@
 use anyhow::{anyhow, Result};
 use clap::{Parser, Subcommand};
 
+use crate::ExtraArgs;
+
 #[derive(Parser, Debug, Clone)]
-pub(crate) struct Args {
+pub struct Args {
     #[clap(subcommand)]
     pub action: Action,
 }
 
 #[derive(Subcommand, Debug, Clone)]
-pub(crate) enum Action {
+pub enum Action {
     /// Diff two api response base on given profiles
     Run(RunArgs),
 }
 
 #[derive(Parser, Debug, Clone)]
-pub(crate) struct RunArgs {
+pub struct RunArgs {
     /// profile name
     #[clap(short, long, value_parser)]
     pub profile: String,
@@ -25,38 +27,64 @@ pub(crate) struct RunArgs {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct KeyVal {
+pub struct KeyVal {
+    key_type: KeyValType,
     key: String,
     val: String,
 }
 
-pub(crate) enum KeyValType {
+#[derive(Debug, Clone)]
+pub enum KeyValType {
     Query,
     Header,
     Body,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct KeyValList {}
+
 fn parse_key_val(s: &str) -> Result<KeyVal> {
     let mut parts = s.splitn(2, '=');
 
-    fn receiver<'a>(x: Option<&'a str>) -> Result<&'a str> {
+    fn retrieve<'a>(x: Option<&'a str>) -> Result<&'a str> {
         x.ok_or_else(|| anyhow!("error"))
     }
 
-    let key = receiver(parts.next())?;
-    let value = receiver(parts.next())?;
+    let key = retrieve(parts.next())?.trim();
+    let value = retrieve(parts.next())?.trim();
 
-    let key_type = match key.chars().next() {
-        Some('%') => KeyValType::Header,
-        Some('@') => KeyValType::Body,
-        _ => KeyValType::Query,
+    let (key_type, key) = match key.chars().next() {
+        Some('%') => (KeyValType::Header, &key[1..]),
+        Some('@') => (KeyValType::Body, &key[1..]),
+        Some(v) if v.is_alphabetic() => (KeyValType::Query, key),
+        _ => return Err(anyhow!("invalid key val")),
     };
 
-    let key = match key_type {
-        KeyValType::Header => key[1..].to_string(),
-        KeyValType::Body => key[1..].to_string(),
-        KeyValType::Query => key[1..].to_string(),
-    };
+    Ok(KeyVal {
+        key_type,
+        key: key.to_string(),
+        val: value.to_string(),
+    })
+}
 
-    todo!()
+impl From<Vec<KeyVal>> for ExtraArgs {
+    fn from(args: Vec<KeyVal>) -> Self {
+        let mut headers = vec![];
+        let mut query = vec![];
+        let mut body = vec![];
+
+        for arg in args {
+            match arg.key_type {
+                KeyValType::Header => headers.push((arg.key, arg.val)),
+                KeyValType::Query => query.push((arg.key, arg.val)),
+                KeyValType::Body => body.push((arg.key, arg.val)),
+            }
+        }
+
+        Self {
+            headers,
+            query,
+            body,
+        }
+    }
 }
