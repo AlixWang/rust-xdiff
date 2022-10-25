@@ -23,7 +23,8 @@ pub struct RequestProfile {
     pub params: Option<serde_json::Value>,
     #[serde(
         skip_serializing_if = "HeaderMap::is_empty",
-        with = "http_serde::header_map"
+        with = "http_serde::header_map",
+        default
     )]
     pub headers: HeaderMap,
     #[serde(skip_serializing_if = "Option::is_none", default)]
