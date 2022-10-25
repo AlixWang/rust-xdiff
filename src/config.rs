@@ -1,6 +1,9 @@
+use crate::utils::diff_text;
 use crate::{req::RequestProfile, ExtraArgs};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fs};
+use std::collections::HashMap;
+use tokio::fs;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ResponseProfile {
@@ -18,12 +21,17 @@ pub struct DiffProfile {
 }
 
 impl DiffProfile {
-    pub async fn diff(&self, _args: ExtraArgs) {
-        // let res1 = self.request1.send(&args).await?;
-        // let res2 = self.request2.send(&args).await?;
+    pub async fn diff(&self, args: ExtraArgs) -> Result<String> {
+        let res1 = self.request1.send(&args).await?;
+        let res2 = self.request2.send(&args).await?;
 
-        // let text1 = res1.fillter_text(&self.response).await?;
-        // let text2 = res2.fillter_text(&self.response).await?;
+        let text1 = res1.filter_text(&self.response).await?;
+        let text2 = res2.filter_text(&self.response).await?;
+        let diff = diff_text(&text1, &text2);
+
+        println!("text1 is {text1}");
+        println!("text2 is {text2}");
+
         todo!()
     }
 }
@@ -36,7 +44,7 @@ pub struct DiffConfig {
 
 impl DiffConfig {
     pub async fn load_yaml(path: &str) -> anyhow::Result<Self> {
-        let content = fs::read_to_string(path)?;
+        let content = fs::read_to_string(path).await?;
         Self::from_yaml(&content)
     }
     pub fn from_yaml(context: &str) -> anyhow::Result<Self> {

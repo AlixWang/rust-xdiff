@@ -1,6 +1,7 @@
 pub mod cli;
 mod config;
 mod req;
+mod utils;
 pub use config::{DiffConfig, DiffProfile};
 
 #[derive(Debug, Clone, PartialEq, Eq)]

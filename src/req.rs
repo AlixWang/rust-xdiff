@@ -67,7 +67,7 @@ impl RequestProfile {
 
         let content_type = get_content_type(&headers);
 
-        match content_type {
+        match content_type.as_deref() {
             Some("application/json") => {
                 let body = serde_json::to_string(&body)?;
                 Ok((headers, query, body))
@@ -84,8 +84,23 @@ impl RequestProfile {
 }
 
 impl ResponseExt {
-    pub async fn filter_text(&self, profile: &ResponseProfile) -> Result<String> {
+    pub async fn filter_text(self, profile: &ResponseProfile) -> Result<String> {
+        fn filter_json(text: &str, skip: &Vec<String>) -> Result<String> {
+            let json: serde_json::Value = serde_json::from_str(text)?;
+
+            match json {
+                serde_json::Value::Object(mut j) => {
+                    for k in skip {
+                        j[k] = json!(null);
+                    }
+                    Ok(serde_json::to_string_pretty(&j)?)
+                }
+                _ => Ok(String::new()),
+            }
+        }
+
         let mut output = String::new();
+        write!(output, "{:?}{}\r", self.0.version(), self.0.status())?;
         let headers = self.0.headers();
 
         for (k, v) in headers.iter() {
@@ -94,32 +109,25 @@ impl ResponseExt {
             }
         }
 
-        let content_type = get_content_type(&headers);
+        let content_type = get_content_type(headers);
         let text = self.0.text().await?;
 
-        match content_type {
+        match content_type.as_deref() {
             Some("application/json") => {
-                let text = self.filter_json(&text, profile.skip_body)?;
+                let text = filter_json(&text, &profile.skip_body)?;
                 output.push_str(&text);
             }
             _ => output.push_str(&text),
         }
 
-        todo!()
-    }
-
-    fn filter_json(&self, text: &str, skip: Vec<String>) -> Result<String> {
-        let mut json: serde_json::Value = serde_json::from_str(text)?;
-        for k in skip {
-            json[k] = json!(null);
-        }
-        Ok(serde_json::to_string_pretty(&json)?)
+        Ok(output)
     }
 }
 
-fn get_content_type(headers: &HeaderMap) -> Option<&str> {
+fn get_content_type(headers: &HeaderMap) -> Option<String> {
     let content_type = headers
         .get(header::CONTENT_TYPE)
-        .and_then(|v| v.to_str().unwrap().split(';').next());
+        .and_then(|v| v.to_str().unwrap().split(';').next())
+        .map(|x| x.to_string());
     content_type
 }

@@ -1,16 +1,34 @@
 ---
+todo:
+  req1:
+    url: https://jsonplaceholder.typicode.com/todos/1
+    params:
+      a: 100
+  req2:
+    url: https://jsonplaceholder.typicode.com/todos/2
+    params:
+      c: 200
+  res:
+    skip_headers:
+      - report-to
+      - date
+      - x-ratelimit-remaining
+      - x-ratelimit-reset
+      - cf-ray
+      - age
+      - cf-cache-status
+    skip_body:
+      - id
 rust:
-  request1:
+  req1:
     method: GET
-    url: https://rust-lang.org/
+    url: https://www.rust-lang.org/
     headers:
       user-agent: Aloha
     params:
       hello: world
-  request2:
+  req2:
     method: GET
-    url: https://rust-lang.org/
+    url: https://www.rust-lang.org/
     params: {}
-  response:
-    skip_headers:
-      - set-cookie
+ set-cookie

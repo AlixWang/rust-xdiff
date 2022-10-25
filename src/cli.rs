@@ -46,7 +46,7 @@ pub struct KeyValList {}
 fn parse_key_val(s: &str) -> Result<KeyVal> {
     let mut parts = s.splitn(2, '=');
 
-    fn retrieve<'a>(x: Option<&'a str>) -> Result<&'a str> {
+    fn retrieve(x: Option<&str>) -> Result<&str> {
         x.ok_or_else(|| anyhow!("error"))
     }
 
