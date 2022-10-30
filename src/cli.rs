@@ -23,7 +23,10 @@ pub struct RunArgs {
 
     /// param overrides
     #[clap(short,long,value_parser=parse_key_val, number_of_values=1)]
-    extra_params: Vec<KeyVal>,
+    pub extra_params: Vec<KeyVal>,
+
+    #[clap(short, long, value_parser)]
+    pub config: Option<String>,
 }
 
 #[derive(Debug, Clone)]

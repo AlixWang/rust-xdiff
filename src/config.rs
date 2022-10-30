@@ -1,6 +1,6 @@
 // use crate::utils::diff_text;
-use crate::req::RequestProfile;
 use crate::ExtraArgs;
+use crate::{req::RequestProfile, utils::diff_text};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -31,14 +31,9 @@ impl DiffProfile {
         let res1 = self.req1.send(&args).await?;
         let res2 = self.req2.send(&args).await?;
 
-        // let text1 = res1.filter_text(&self.response).await?;
-        // let text2 = res2.filter_text(&self.response).await?;
-        // let diff = diff_text(&text1, &text2);
-
-        // println!("text1 is {text1}");
-        // println!("text2 is {text2}");
-
-        todo!()
+        let text1 = res1.filter_text(&self.res).await?;
+        let text2 = res2.filter_text(&self.res).await?;
+        diff_text(&text1, &text2)
     }
 }
 
