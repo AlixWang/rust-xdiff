@@ -9,10 +9,14 @@ use xdiff::{
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    let _result = match args.action {
+    let result = match args.action {
         Action::Run(args) => run(args).await,
-        _ => Ok(()),
     };
+
+    match result {
+        Ok(_) => (),
+        Err(err) => println!("{:?}", err),
+    }
 
     Ok(())
 }
@@ -20,7 +24,7 @@ async fn main() -> anyhow::Result<()> {
 async fn run(args: RunArgs) -> anyhow::Result<()> {
     let config_file = args.config.unwrap_or_else(|| "./xdiff.yaml".to_string());
     let config = DiffConfig::load_yaml(&config_file).await?;
-
+    config.validate()?;
     let profile = config.get_profile(&args.profile).ok_or_else(|| {
         anyhow::anyhow!(
             "Profile {} is not found in config file {}",

@@ -7,7 +7,7 @@ todo:
   req2:
     url: https://jsonplaceholder.typicode.com/todos/2
     params:
-      c: 200
+      - c: 200
   res:
     skip_headers:
       - report-to

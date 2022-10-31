@@ -1,7 +1,7 @@
 // use crate::utils::diff_text;
 use crate::ExtraArgs;
 use crate::{req::RequestProfile, utils::diff_text};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tokio::fs;
@@ -35,6 +35,12 @@ impl DiffProfile {
         let text2 = res2.filter_text(&self.res).await?;
         diff_text(&text1, &text2)
     }
+
+    pub fn validate(&self) -> Result<()> {
+        self.req1.validate().context("req1 failed to validate ")?;
+        self.req2.validate().context("req1 failed to validate ")?;
+        Ok(())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -54,5 +60,14 @@ impl DiffConfig {
 
     pub fn get_profile(&self, name: &str) -> Option<&DiffProfile> {
         self.profiles.get(name)
+    }
+
+    pub fn validate(&self) -> Result<()> {
+        for (name, profile) in &self.profiles {
+            profile
+                .validate()
+                .context(format!("failed to validate profile: {}", name))?;
+        }
+        Ok(())
     }
 }

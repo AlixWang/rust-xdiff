@@ -19,7 +19,7 @@ pub struct RequestProfile {
     #[serde(with = "http_serde::method", default)]
     pub method: Method,
     pub url: Url,
-    #[serde(skip_serializing_if = "Option::is_none", default)]
+    #[serde(skip_serializing_if = "empty_json_value", default)]
     pub params: Option<serde_json::Value>,
     #[serde(
         skip_serializing_if = "HeaderMap::is_empty",
@@ -27,11 +27,30 @@ pub struct RequestProfile {
         default
     )]
     pub headers: HeaderMap,
-    #[serde(skip_serializing_if = "Option::is_none", default)]
+    #[serde(skip_serializing_if = "empty_json_value", default)]
     pub body: Option<serde_json::Value>,
 }
 
 impl RequestProfile {
+    pub fn validate(&self) -> Result<()> {
+        if let Some(params) = self.params.as_ref() {
+            if !params.is_object() {
+                return Err(anyhow::anyhow!(
+                    "Params must be an object but got \n{}",
+                    serde_yaml::to_string(params)?
+                ));
+            }
+        }
+        if let Some(body) = self.body.as_ref() {
+            if !body.is_object() {
+                return Err(anyhow::anyhow!(
+                    "body must be an object but got \n{}",
+                    serde_yaml::to_string(body)?
+                ));
+            }
+        }
+        Ok(())
+    }
     pub async fn send(&self, args: &super::ExtraArgs) -> Result<ResponseExt> {
         let req = Client::new().request(self.method.clone(), self.url.clone());
 
@@ -131,4 +150,11 @@ fn get_content_type(headers: &HeaderMap) -> Option<String> {
         .and_then(|v| v.to_str().unwrap().split(';').next())
         .map(|x| x.to_string());
     content_type
+}
+
+fn empty_json_value(v: &Option<serde_json::Value>) -> bool {
+    v.as_ref().map_or(true, |v| {
+        println!("print the result {}", v);
+        v.is_null() || (v.is_object() && v.as_object().unwrap().is_empty())
+    })
 }
