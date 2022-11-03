@@ -41,6 +41,9 @@ impl DiffProfile {
         self.req2.validate().context("req1 failed to validate ")?;
         Ok(())
     }
+    pub fn new(req1: RequestProfile, req2: RequestProfile, res: ResponseProfile) -> Self {
+        Self { req1, req2, res }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -50,6 +53,10 @@ pub struct DiffConfig {
 }
 
 impl DiffConfig {
+    pub fn new(profiles: HashMap<String, DiffProfile>) -> Self {
+        Self { profiles }
+    }
+
     pub async fn load_yaml(path: &str) -> anyhow::Result<Self> {
         let content = fs::read_to_string(path).await?;
         Self::from_yaml(&content)
@@ -69,5 +76,14 @@ impl DiffConfig {
                 .context(format!("failed to validate profile: {}", name))?;
         }
         Ok(())
+    }
+}
+
+impl ResponseProfile {
+    pub fn new(skip_headers: Vec<String>, skip_body: Vec<String>) -> Self {
+        Self {
+            skip_headers,
+            skip_body,
+        }
     }
 }

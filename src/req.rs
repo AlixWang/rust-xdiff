@@ -1,13 +1,12 @@
 use anyhow::Result;
 use reqwest::{
     header::{self, HeaderMap, HeaderName, HeaderValue},
-    Client, Method, Response,
+    Client, Method, Response, Url,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::fmt::Write;
 use std::str::FromStr;
-use url::Url;
 
 use crate::{config::ResponseProfile, ExtraArgs};
 
@@ -103,6 +102,30 @@ impl RequestProfile {
     }
 }
 
+impl FromStr for RequestProfile {
+    type Err = anyhow::Error;
+
+    fn from_str(url: &str) -> Result<Self, Self::Err> {
+        let mut url = Url::parse(url)?;
+
+        let qs = url.query_pairs();
+
+        let mut params = json!({});
+        for (k, v) in qs {
+            params[&*k] = v.parse()?;
+        }
+        url.set_query(None);
+
+        Ok(Self {
+            method: Method::GET,
+            url,
+            params: Some(params),
+            headers: HeaderMap::new(),
+            body: None,
+        })
+    }
+}
+
 impl ResponseExt {
     pub async fn filter_text(self, profile: &ResponseProfile) -> Result<String> {
         fn filter_json(text: &str, skip: &Vec<String>) -> Result<String> {
@@ -141,6 +164,14 @@ impl ResponseExt {
         }
 
         Ok(output)
+    }
+
+    pub fn get_headers_keys(&self) -> Vec<String> {
+        self.0
+            .headers()
+            .iter()
+            .map(|(k, _)| k.as_str().to_string())
+            .collect()
     }
 }
 
