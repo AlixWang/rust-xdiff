@@ -185,7 +185,6 @@ fn get_content_type(headers: &HeaderMap) -> Option<String> {
 
 fn empty_json_value(v: &Option<serde_json::Value>) -> bool {
     v.as_ref().map_or(true, |v| {
-        println!("print the result {}", v);
         v.is_null() || (v.is_object() && v.as_object().unwrap().is_empty())
     })
 }

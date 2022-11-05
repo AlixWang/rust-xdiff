@@ -2,7 +2,13 @@ use anyhow::Result;
 use console::{style, Style};
 use core::fmt;
 use similar::{ChangeTag, TextDiff};
-use std::fmt::Write as _;
+
+use syntect::easy::HighlightLines;
+use syntect::highlighting::ThemeSet;
+use syntect::parsing::SyntaxSet;
+use syntect::util::{as_24_bit_terminal_escaped, LinesWithEndings};
+
+use std::fmt::Write;
 
 struct Line(Option<usize>);
 
@@ -50,6 +56,22 @@ pub fn diff_text(text1: &str, text2: &str) -> Result<String> {
                 }
             }
         }
+    }
+    Ok(output)
+}
+
+pub fn height_light_text(input: &str, extention: &str) -> Result<String> {
+    let ps = SyntaxSet::load_defaults_newlines();
+    let ts = ThemeSet::load_defaults();
+
+    let syntax = ps.find_syntax_by_extension(extention).unwrap();
+    let mut h = HighlightLines::new(syntax, &ts.themes["base16-ocean.dark"]);
+    let mut output = "".to_string();
+    for line in LinesWithEndings::from(input) {
+        let ranges = h.highlight_line(line, &ps).unwrap();
+        let escaped = as_24_bit_terminal_escaped(&ranges[..], true);
+
+        write!(&mut output, "{}", escaped)?;
     }
     Ok(output)
 }

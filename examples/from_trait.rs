@@ -11,5 +11,5 @@ impl From<String> for Test {
 
 fn main() {
     let test = Test::from(String::from("xxx"));
-    println!("{:?}",test);
+    println!("{:?}", test);
 }

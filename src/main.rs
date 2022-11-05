@@ -3,7 +3,7 @@ use dialoguer::{theme::ColorfulTheme, Input, MultiSelect};
 use std::io::Write;
 use xdiff::{
     cli::{Action, Args, RunArgs},
-    DiffConfig, DiffProfile, ExtraArgs, RequestProfile, ResponseProfile,
+    height_light_text, DiffConfig, DiffProfile, ExtraArgs, RequestProfile, ResponseProfile,
 };
 
 #[tokio::main]
@@ -76,7 +76,7 @@ async fn parse() -> anyhow::Result<()> {
     // if atty::is(atty::Stream::Stdout) {
     // write!(stdout, "{}", highlight_text(&result, "yaml", None)?)?;
     // } else {
-    write!(stdout, "{}", result)?;
+    write!(stdout, "{}", height_light_text(&result, "yaml")?)?;
     // }
 
     Ok(())
