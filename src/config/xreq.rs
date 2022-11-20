@@ -11,6 +11,9 @@ pub struct RequestConfig {
 }
 
 impl RequestConfig {
+    pub fn new(profiles: HashMap<String, RequestProfile>) -> Self {
+        Self { profiles }
+    }
     pub fn get_profile(&self, name: &str) -> Option<&RequestProfile> {
         self.profiles.get(name)
     }

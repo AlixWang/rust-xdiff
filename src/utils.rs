@@ -8,7 +8,8 @@ use syntect::highlighting::ThemeSet;
 use syntect::parsing::SyntaxSet;
 use syntect::util::{as_24_bit_terminal_escaped, LinesWithEndings};
 
-use std::fmt::Write;
+use std::fmt::Write as _;
+use std::io::Write as _;
 
 struct Line(Option<usize>);
 
@@ -81,4 +82,17 @@ pub fn highlight_text(text: &str, extension: &str, theme: Option<&str>) -> Resul
     }
 
     Ok(output)
+}
+
+pub fn process_error_output(result: Result<()>) -> Result<()> {
+    match result {
+        Ok(_) => {}
+        Err(e) => {
+            let stderr = std::io::stderr();
+            let mut stderr = stderr.lock();
+            let s = Style::new().red();
+            write!(stderr, "{}", s.apply_to(format!("{:?}", e)));
+        }
+    };
+    Ok(())
 }

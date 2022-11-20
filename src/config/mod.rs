@@ -272,6 +272,7 @@ where
     Self: ValidateConfig + DeserializeOwned,
 {
     async fn load_yaml(path: &str) -> Result<Self> {
+        println!("{}", path);
         let content = fs::read_to_string(path).await?;
         Self::from_yaml(&content)
     }
