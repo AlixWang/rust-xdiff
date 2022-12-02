@@ -12,8 +12,8 @@ use tokio::fs;
 
 pub mod xdiff;
 pub mod xreq;
-pub use xdiff::*;
-pub use xreq::*;
+pub use self::xdiff::*;
+pub use self::xreq::*;
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq, Eq)]
 pub struct ResponseProfile {
@@ -123,6 +123,22 @@ impl RequestProfile {
         }
 
         // Ok((headers, query, body))
+    }
+
+    pub fn new(
+        method: Method,
+        url: Url,
+        params: Option<serde_json::Value>,
+        headers: HeaderMap,
+        body: Option<serde_json::Value>,
+    ) -> Self {
+        Self {
+            method,
+            url,
+            params,
+            headers,
+            body,
+        }
     }
 }
 
@@ -286,4 +302,73 @@ where
 
 pub trait ValidateConfig {
     fn validate(&self) -> Result<()>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mockito::{mock, Mock};
+    use reqwest::StatusCode;
+
+    #[tokio::test]
+    async fn request_profile_send_should_work() {
+        let _m = mock_for_url("/todo?a=1&b=2", json!({"id":1,"title":2}));
+
+        let res = get_response("/todo?a=1&b=2", &Default::default())
+            .await
+            .into_inner();
+
+        assert_eq!(res.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn request_profile_with_extra_args_send_should_work() {
+        let _m = mock_for_url("/todo?a=1&b=3", json!({"id":1,"title":2}));
+
+        let args = ExtraArgs::new_with_query(vec![("b".into(), "3".into())]);
+
+        let res = get_response("/todo?a=1&b=2", &args).await.into_inner();
+
+        assert_eq!(res.status(), StatusCode::OK);
+    }
+
+    #[test]
+    fn request_profile_get_url_should_work() {
+        let profile = get_profile("/todo?a=1&b=2");
+        assert_eq!(
+            profile.get_url(&Default::default()).unwrap(),
+            get_url("/todo?a=1&b=2")
+        );
+    }
+
+    #[test]
+    fn request_profile_get_url_with_args_should_work() {
+        let profile = get_profile("/todo?a=1&b=2");
+        let args = ExtraArgs::new_with_query(vec![("c".into(), "3".into())]);
+        assert_eq!(
+            profile.get_url(&args).unwrap(),
+            get_url("/todo?a=1&b=2&c=3")
+        );
+    }
+
+    fn mock_for_url(path_and_query: &str, resp_body: serde_json::Value) -> Mock {
+        mock("GET", path_and_query)
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(serde_json::to_string(&resp_body).unwrap())
+            .create()
+    }
+    fn get_url(path: &str) -> String {
+        format!("{}{}", mockito::server_url(), path)
+    }
+
+    fn get_profile(path_and_query: &str) -> RequestProfile {
+        let url = get_url(path_and_query);
+        RequestProfile::from_str(&url).unwrap()
+    }
+
+    async fn get_response(path_and_query: &str, args: &ExtraArgs) -> ResponseExt {
+        let profile = get_profile(path_and_query);
+        profile.send(args).await.unwrap()
+    }
 }
